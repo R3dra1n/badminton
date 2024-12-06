@@ -5,30 +5,33 @@ import pandas as pd
 players = ["A", "B", "C", "D", "E", "F", "G", "H"]
 
 def generate_match_schedule(players):
-    num_players = len(players)
     num_rounds = 7  # 每人打满 7 场
     matches = []  # 存储每一轮的比赛
     used_partners = {player: set() for player in players}  # 记录每人的搭档
 
     for round_num in range(num_rounds):
         round_matches = []
-        random.shuffle(players)  # 随机打乱选手顺序
-        paired = set()  # 本轮已经分配的选手
+        available_players = players[:]
+        random.shuffle(available_players)  # 随机打乱选手顺序
 
-        for i in range(0, num_players, 4):
-            # 按顺序取 4 个选手
-            group = players[i:i + 4]
-            if len(group) < 4:
-                continue  # 如果不足 4 人，跳过（理论上不会发生）
+        while len(available_players) >= 4:
+            # 从剩余选手中随机选择4个
+            group = available_players[:4]
+            del available_players[:4]  # 移除已选择的选手
 
             # 确保搭档不重复
             p1, p2 = group[0], group[1]
             p3, p4 = group[2], group[3]
 
+            # 如果搭档已经存在，重新洗牌
             if p2 in used_partners[p1] or p1 in used_partners[p2]:
+                available_players.extend(group)  # 把组加回去
+                random.shuffle(available_players)  # 洗牌重新选择
                 continue
 
             if p4 in used_partners[p3] or p3 in used_partners[p4]:
+                available_players.extend(group)
+                random.shuffle(available_players)
                 continue
 
             # 添加搭档关系
@@ -39,18 +42,20 @@ def generate_match_schedule(players):
 
             # 记录本轮比赛
             round_matches.append(((p1, p2), (p3, p4)))
-            paired.update(group)
 
         # 如果无法满足条件，重新生成本轮
-        if len(round_matches) < num_players // 4:
-            return generate_match_schedule(players)
+        if len(round_matches) < len(players) // 4:
+            return None
 
         matches.append(round_matches)
 
     return matches
 
-# 生成对阵表
-matches = generate_match_schedule(players)
+# 尝试生成对阵表，直到成功为止
+while True:
+    matches = generate_match_schedule(players)
+    if matches:
+        break
 
 # 转换为 DataFrame 便于展示
 schedule = []
@@ -66,7 +71,7 @@ for round_num, round_matches in enumerate(matches, 1):
 
 schedule_df = pd.DataFrame(schedule)
 
-# 展示对阵表
+# 使用 Streamlit 展示对阵表
 import streamlit as st
 
 st.title("羽毛球随机对阵生成器")
