@@ -23,7 +23,7 @@ def select_double_players():
     selected_users = st.session_state.selected_users
 
     # 显示当前队列
-    st.write(f"当前队列: {queue}")
+    st.subheader(f"当前队列: {queue}")
 
     # 当前用户操作
     st.subheader(f"当前用户：{current_user}")
